@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EFFATA | Sistema de Gestión</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <style>
+        :root {
+            --primary: #d35400; 
+            --secondary: #2c3e50; 
+            --bg-light: #f4f6f7;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 90px;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary), #e67e22);
+            color: white;
+            padding: 20px 15px 30px 15px;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            box-shadow: 0 4px 15px rgba(211, 84, 0, 0.3);
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-custom {
+            border: none;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .btn-main {
+            background-color: var(--primary);
+            color: white; border: none; padding: 12px;
+            border-radius: 10px; font-weight: 600; width: 100%;
+        }
+
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 5%; width: 90%;
+            background: white; height: 65px; border-radius: 35px;
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000;
+        }
+
+        .nav-item-btn {
+            background: none; border: none; font-size: 1.4rem; color: #bdc3c7;
+            transition: 0.3s; position: relative;
+        }
+        .nav-item-btn.active { color: var(--primary); transform: translateY(-5px); }
+        .nav-item-btn.active::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%;
+            transform: translateX(-50%); width: 5px; height: 5px;
+            background: var(--primary); border-radius: 50%;
+        }
+
+        .view-section { display: none; padding: 15px; }
+        .view-section.active { display: block; animation: fadeIn 0.4s; }
+
+        .ing-tag {
+            display: inline-block; background: #ecf0f1; padding: 4px 10px;
+            border-radius: 15px; font-size: 0.85rem; margin: 2px;
+        }
+        
+        .tasa-wrapper {
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
+            padding: 5px 15px; border-radius: 20px; display: inline-flex;
+            align-items: center; margin-top: 10px;
+        }
+        .tasa-input {
+            background: transparent; border: none; color: white;
+            font-weight: bold; width: 60px; text-align: center; outline: none;
+        }
+        
+        .unit-selector {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header text-center">
+        <h2 class="fw-bold m-0"><i class="fas fa-utensils me-2"></i>EFFATA</h2>
+        <small style="opacity: 0.9;">Antojos y Sabores</small>
+        <br>
+        <div class="tasa-wrapper">
+            <small class="me-2">Tasa Hoy:</small>
+            <input type="number" id="tasaCambio" class="tasa-input" value="4200" step="0.01" min="1">
+            <small>COP</small>
+        </div>
+    </header>
+
+    <div id="view-inventario" class="view-section active">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-secondary fw-bold m-0">Bodega e Insumos</h5>
+            <button class="btn btn-sm btn-outline-danger" onclick="modalBaja()">
+                <i class="fas fa-trash-alt"></i> Reportar Baja
+            </button>
+        </div>
+
+        <div class="card card-custom p-3">
+            <label class="small text-muted fw-bold mb-2">NUEVA COMPRA</label>
+            <input type="text" id="invNombre" class="form-control mb-2" placeholder="Nombre (ej. Carne, Pan)">
+            <div class="row g-2">
+                <div class="col-6">
+                    <input type="number" id="invCosto" class="form-control" placeholder="Costo" step="0.01" min="0">
+                </div>
+                <div class="col-6">
+                    <select id="invMoneda" class="form-select bg-light fw-bold">
+                        <option value="COP">PESOS</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <input type="number" id="invCantidad" class="form-control" placeholder="Cantidad" step="0.01" min="0.01">
+                </div>
+                <div class="col-6">
+                    <select id="invUnidad" class="form-select">
+                        <option value="kg">Kilogramos (kg)</option>
+                        <option value="g">Gramos (g)</option>
+                        <option value="lb">Libras (lb)</option>
+                        <option value="und">Unidades (und)</option>
+                        <option value="lt">Litros (lt)</option>
+                        <option value="ml">Mililitros (ml)</option>
+                        <option value="oz">Onzas (oz)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-main mt-3" onclick="agregarIngrediente()">Guardar</button>
+        </div>
+
+        <div class="card card-custom p-0">
+            <ul id="listaInventario" class="list-group list-group-flush small"></ul>
+        </div>
+    </div>
+
+    <div id="view-menu" class="view-section">
+        <h5 class="text-secondary fw-bold mb-3">Gestión de Menú</h5>
+        <div class="card card-custom p-3">
+            <label class="small text-muted fw-bold">DATOS DEL PLATO</label>
+            <input type="text" id="platoNombre" class="form-control mb-2" placeholder="Nombre del Plato">
+            <div class="input-group mb-3">
+                <span class="input-group-text bg-success text-white border-0">Precio Venta</span>
+                <input type="number" id="platoPrecio" class="form-control" placeholder="0.00" step="0.01" min="0">
+                <select id="platoMoneda" class="form-select" style="max-width: 90px;">
+                    <option value="COP">COP</option>
+                    <option value="USD">USD</option>
+                </select>
+            </div>
+            <hr class="my-2">
+            <label class="small text-primary fw-bold">INGREDIENTES (RECETA)</label>
+            <div class="bg-light p-2 rounded border mb-2">
+                <div class="input-group input-group-sm mb-2">
+                    <select id="selIngrediente" class="form-select"></select>
+                    <input type="number" id="cantIngrediente" class="form-control" placeholder="Cant." style="max-width: 70px;" step="0.01" min="0.01">
+                    <select id="unidadIngrediente" class="form-select unit-selector" style="max-width: 80px;">
+                        <option value="kg">kg</option>
+                        <option value="g" selected>g</option>
+                        <option value="lb">lb</option>
+                        <option value="oz">oz</option>
+                        <option value="und">und</option>
+                        <option value="lt">lt</option>
+                        <option value="ml">ml</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="agregarIngredienteTemp()">Agg</button>
+                </div>
+                <div id="listaTempIngredientes" class="d-flex flex-wrap"></div>
+            </div>
+            <button class="btn-main" onclick="guardarPlatoCompleto()">Guardar Plato</button>
+        </div>
+        <div id="listaMenu" class="row g-2"></div>
+    </div>
+
+    <div id="view-ventas" class="view-section">
+        <h5 class="text-secondary fw-bold mb-3">Punto de Venta</h5>
+        <div class="card card-custom p-4 text-center border-2 border-success">
+            <label class="text-muted small mb-2">SELECCIONAR PRODUCTO</label>
+            <select id="selVenta" class="form-select form-select-lg mb-3 fw-bold text-dark text-center"></select>
+            <div class="d-flex justify-content-center align-items-center gap-3 mb-4">
+                <button class="btn btn-outline-secondary rounded-circle" onclick="modificarCant(-1)">-</button>
+                <input type="number" id="cantVenta" class="form-control text-center fw-bold fs-4" value="1" style="width: 80px;" min="1" readonly>
+                <button class="btn btn-outline-secondary rounded-circle" onclick="modificarCant(1)">+</button>
+            </div>
+            <button class="btn btn-success w-100 py-3 rounded-3 shadow fw-bold fs-5" onclick="procesarVenta()">COBRAR</button>
+        </div>
+        <h6 class="mt-4 text-muted ms-2">Ventas Recientes</h6>
+        <div id="historialVentas" class="list-group shadow-sm rounded-3"></div>
+    </div>
+
+    <div id="view-finanzas" class="view-section">
+        <h5 class="text-secondary fw-bold mb-3">Reportes y Cierre</h5>
+        <div class="card card-custom bg-dark text-white p-4 text-center mb-3">
+            <small class="text-uppercase opacity-75">Ganancia Real (Hoy)</small>
+            <h1 id="finGanancia" class="text-success fw-bold m-0">$0.00</h1>
+            <small id="finGananciaCop" class="d-block mt-1">0 COP</small>
+        </div>
+        <div class="row g-2 mb-4">
+            <div class="col-6">
+                <div class="card card-custom p-3 text-center h-100">
+                    <small class="text-danger fw-bold">Inversión Stock</small>
+                    <div id="finInversion" class="fw-bold mt-1">$0</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card card-custom p-3 text-center h-100">
+                    <small class="text-primary fw-bold">Total Ventas</small>
+                    <div id="finVentas" class="fw-bold mt-1">$0</div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary w-100 mb-3 py-2" onclick="generarReportePDF()">Generar Cierre del Día (PDF)</button>
+        <hr>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary flex-fill" onclick="descargarBackup()">Backup</button>
+            <button class="btn btn-outline-secondary flex-fill" onclick="document.getElementById('fileInput').click()">Restaurar</button>
+            <input type="file" id="fileInput" style="display:none" accept=".json" onchange="restaurarBackup(this)">
+        </div>
+        <div class="text-center mt-4">
+            <button class="btn btn-link text-danger text-decoration-none btn-sm" onclick="borrarTodo()">Resetear Fábrica</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item-btn active" onclick="cambiarVista('inventario', this)"><i class="fas fa-boxes"></i></button>
+        <button class="nav-item-btn" onclick="cambiarVista('menu', this)"><i class="fas fa-book-open"></i></button>
+        <button class="nav-item-btn" onclick="cambiarVista('ventas', this)"><i class="fas fa-cash-register"></i></button>
+        <button class="nav-item-btn" onclick="cambiarVista('finanzas', this)"><i class="fas fa-chart-pie"></i></button>
+    </nav>
+
+    <script>
+        // --- VARIABLES GLOBALES ---
+        let data = { inventario: [], menu: [], movimientos: [], tasa: 4200 };
+        let recetaTemp = [];
+
+        // --- CONSTANTES DE CONVERSIÓN ---
+        const CONVERSIONES = {
+            'kg': { 'g': 1000, 'kg': 1, 'lb': 2.20462, 'oz': 35.274 },
+            'g': { 'kg': 0.001, 'g': 1, 'lb': 0.00220462, 'oz': 0.035274 },
+            'lb': { 'kg': 0.453592, 'g': 453.592, 'lb': 1, 'oz': 16 },
+            'oz': { 'kg': 0.0283495, 'g': 28.3495, 'lb': 0.0625, 'oz': 1 },
+            'lt': { 'ml': 1000, 'lt': 1 },
+            'ml': { 'lt': 0.001, 'ml': 1 },
+            'und': { 'und': 1 }
+        };
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            if(localStorage.getItem('effata_system_db')) {
+                try {
+                    data = JSON.parse(localStorage.getItem('effata_system_db'));
+                    document.getElementById('tasaCambio').value = data.tasa;
+                } catch (e) {
+                    console.error('Error al cargar datos:', e);
+                    data = { inventario: [], menu: [], movimientos: [], tasa: 4200 };
+                }
+            }
+            renderizarInterfaz();
+        };
+
+        // --- FUNCIONES DE PERSISTENCIA ---
+        function guardar() {
+            data.tasa = parseFloat(document.getElementById('tasaCambio').value) || 4200;
+            localStorage.setItem('effata_system_db', JSON.stringify(data));
+            renderizarInterfaz();
+        }
+
+        // --- NAVEGACIÓN ---
+        function cambiarVista(id, btn) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // --- CONVERSIÓN DE UNIDADES ---
+        function convertirUnidades(cantidad, unidadOrigen, unidadDestino) {
+            // Si las unidades son iguales, no hay conversión
+            if (unidadOrigen === unidadDestino) return cantidad;
+            
+            // Si no hay tabla de conversión directa, intentar encontrar camino
+            if (CONVERSIONES[unidadOrigen] && CONVERSIONES[unidadOrigen][unidadDestino]) {
+                return cantidad * CONVERSIONES[unidadOrigen][unidadDestino];
+            }
+            
+            // Para sólidos y líquidos por separado
+            const solidas = ['kg', 'g', 'lb', 'oz'];
+            const liquidas = ['lt', 'ml'];
+            
+            if (solidas.includes(unidadOrigen) && solidas.includes(unidadDestino)) {
+                // Convertir a gramos primero, luego a destino
+                const enGramos = convertirUnidades(cantidad, unidadOrigen, 'g');
+                return convertirUnidades(enGramos, 'g', unidadDestino);
+            }
+            
+            if (liquidas.includes(unidadOrigen) && liquidas.includes(unidadDestino)) {
+                // Convertir a ml primero, luego a destino
+                const enMl = convertirUnidades(cantidad, unidadOrigen, 'ml');
+                return convertirUnidades(enMl, 'ml', unidadDestino);
+            }
+            
+            // Si no se puede convertir, devolver la cantidad original
+            console.warn(`No se puede convertir de ${unidadOrigen} a ${unidadDestino}`);
+            return cantidad;
+        }
+
+        // --- INVENTARIO ---
+        function agregarIngrediente() {
+            const nombre = document.getElementById('invNombre').value.trim();
+            const costoTotal = parseFloat(document.getElementById('invCosto').value);
+            const moneda = document.getElementById('invMoneda').value;
+            const cantidad = parseFloat(document.getElementById('invCantidad').value);
+            const unidad = document.getElementById('invUnidad').value;
+
+            if(!nombre || isNaN(costoTotal) || isNaN(cantidad) || !unidad) {
+                Swal.fire('Error', 'Completa todos los campos correctamente', 'error');
+                return;
+            }
+
+            // Verificar si el producto ya existe (por nombre)
+            const productoExistente = data.inventario.find(item => 
+                item.nombre.toLowerCase() === nombre.toLowerCase()
+            );
+
+            if (productoExistente) {
+                // Si existe, preguntar si quiere actualizar o crear uno nuevo
+                Swal.fire({
+                    title: 'Producto Existente',
+                    text: `"${nombre}" ya existe en el inventario. ¿Qué deseas hacer?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Actualizar existente',
+                    cancelButtonText: 'Crear como nuevo',
+                    showDenyButton: true,
+                    denyButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Actualizar producto existente
+                        actualizarProductoExistente(productoExistente, costoTotal, moneda, cantidad, unidad);
+                    } else if (result.dismiss === Swal.DismissReason.cancel) {
+                        // Crear como nuevo producto (agregar sufijo)
+                        crearNuevoProducto(nombre, costoTotal, moneda, cantidad, unidad);
+                    }
+                });
+                return;
+            }
+
+            crearNuevoProducto(nombre, costoTotal, moneda, cantidad, unidad, true);
+        }
+
+        function actualizarProductoExistente(producto, costoTotal, moneda, cantidad, unidad) {
+            const tasa = data.tasa;
+            const costoUSD = moneda === 'COP' ? costoTotal / tasa : costoTotal;
+            
+            // Convertir la nueva cantidad a la unidad base del producto existente
+            const cantidadConvertida = convertirUnidades(cantidad, unidad, producto.unidad);
+            
+            // Calcular el nuevo costo unitario promedio
+            const costoExistente = producto.costoUnitarioUSD * producto.cantidad;
+            const costoNuevo = costoUSD;
+            const cantidadTotal = producto.cantidad + cantidadConvertida;
+            const costoUnitarioPromedio = (costoExistente + costoNuevo) / cantidadTotal;
+            
+            // Actualizar el producto
+            producto.costoUnitarioUSD = costoUnitarioPromedio;
+            producto.cantidad += cantidadConvertida;
+            
+            data.movimientos.push({
+                tipo: 'compra',
+                detalle: `Reabastecimiento: ${producto.nombre} - ${cantidad} ${unidad}`,
+                monto: costoUSD,
+                fecha: new Date().toISOString()
+            });
+            
+            limpiar(['invNombre', 'invCosto', 'invCantidad']);
+            guardar();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Actualizado',
+                text: `Se actualizó ${producto.nombre}`,
+                toast: true,
+                position: 'top',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+
+        function crearNuevoProducto(nombre, costoTotal, moneda, cantidad, unidad, mostrarMensaje = false) {
+            const tasa = data.tasa;
+            const costoUSD = moneda === 'COP' ? costoTotal / tasa : costoTotal;
+            const costoUnitario = costoUSD / cantidad;
+
+            data.inventario.push({
+                id: Date.now(),
+                nombre,
+                costoUnitarioUSD: costoUnitario,
+                cantidad,
+                unidad,
+                unidadBase: unidad // Guardar la unidad base para conversiones
+            });
+
+            data.movimientos.push({
+                tipo: 'compra',
+                detalle: `Compra: ${nombre} - ${cantidad} ${unidad}`,
+                monto: costoUSD,
+                fecha: new Date().toISOString()
+            });
+
+            limpiar(['invNombre', 'invCosto', 'invCantidad']);
+            guardar();
+            
+            if (mostrarMensaje) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Guardado',
+                    toast: true,
+                    position: 'top',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        }
+
+        async function modalBaja() {
+            if(data.inventario.length === 0) {
+                Swal.fire('Vacío', 'No hay inventario registrado', 'warning');
+                return;
+            }
+
+            const opciones = data.inventario.map(i => 
+                `<option value="${i.id}">${i.nombre} (Stock: ${i.cantidad} ${i.unidad})</option>`
+            ).join('');
+
+            const { value: formValues } = await Swal.fire({
+                title: 'Registrar Baja',
+                html: `<select id="bajaId" class="swal2-input">${opciones}</select>
+                       <input id="bajaCant" type="number" placeholder="Cantidad" class="swal2-input" step="0.01" min="0.01">
+                       <select id="bajaUnidad" class="swal2-input">
+                           <option value="kg">kg</option>
+                           <option value="g">g</option>
+                           <option value="lb">lb</option>
+                           <option value="oz">oz</option>
+                           <option value="und">und</option>
+                           <option value="lt">lt</option>
+                           <option value="ml">ml</option>
+                       </select>
+                       <input id="bajaRazon" placeholder="Razón (ej: Vencimiento)" class="swal2-input">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Registrar',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('bajaId').value,
+                        document.getElementById('bajaCant').value,
+                        document.getElementById('bajaUnidad').value,
+                        document.getElementById('bajaRazon').value
+                    ];
+                }
+            });
+
+            if (formValues) {
+                const [id, cant, unidadBaja, razon] = formValues;
+                const cantidad = parseFloat(cant);
+                const item = data.inventario.find(i => i.id == id);
+                
+                if(item) {
+                    // Convertir la cantidad a descontar a la unidad base del item
+                    const cantidadConvertida = convertirUnidades(cantidad, unidadBaja, item.unidad);
+                    
+                    if(cantidadConvertida > 0 && item.cantidad >= cantidadConvertida) {
+                        item.cantidad -= cantidadConvertida;
+                        const perdida = item.costoUnitarioUSD * cantidadConvertida;
+                        
+                        data.movimientos.push({
+                            tipo: 'baja',
+                            detalle: `Baja: ${item.nombre} - ${cantidad} ${unidadBaja}`,
+                            razon: razon || 'Sin especificar',
+                            monto: perdida,
+                            fecha: new Date().toISOString()
+                        });
+                        
+                        // Si la cantidad llega a 0, eliminar el item
+                        if (item.cantidad <= 0) {
+                            data.inventario = data.inventario.filter(i => i.id != id);
+                        }
+                        
+                        guardar();
+                        Swal.fire('Registrado', 'Stock descontado correctamente', 'success');
+                    } else {
+                        Swal.fire('Error', 'Cantidad inválida o insuficiente stock', 'error');
+                    }
+                }
+            }
+        }
+
+        // --- MENÚ ---
+        function agregarIngredienteTemp() {
+            const select = document.getElementById('selIngrediente');
+            const id = select.value;
+            
+            if (!id) {
+                Swal.fire('Error', 'Selecciona un ingrediente primero', 'warning');
+                return;
+            }
+            
+            const item = data.inventario.find(i => i.id == parseInt(id));
+            if (!item) return;
+            
+            const cantidadInput = parseFloat(document.getElementById('cantIngrediente').value);
+            const unidadSeleccionada = document.getElementById('unidadIngrediente').value;
+            
+            if (!cantidadInput || cantidadInput <= 0) {
+                Swal.fire('Error', 'Ingresa una cantidad válida', 'warning');
+                return;
+            }
+
+            // Verificar si el ingrediente ya está en la receta temporal
+            if (recetaTemp.some(ing => ing.invId === item.id)) {
+                Swal.fire('Error', 'Este ingrediente ya fue agregado a la receta', 'warning');
+                return;
+            }
+
+            // Convertir la cantidad a la unidad base del ingrediente
+            const cantidadEnUnidadBase = convertirUnidades(cantidadInput, unidadSeleccionada, item.unidad);
+            
+            recetaTemp.push({
+                invId: item.id,
+                nombre: item.nombre,
+                cantidad: cantidadEnUnidadBase, // Guardamos en unidad base
+                unidadOriginal: unidadSeleccionada,
+                cantidadOriginal: cantidadInput
+            });
+            
+            actualizarVistaTemp();
+            document.getElementById('cantIngrediente').value = '';
+        }
+
+        function actualizarVistaTemp() {
+            const container = document.getElementById('listaTempIngredientes');
+            container.innerHTML = recetaTemp.map((ing, idx) => {
+                // Mostrar la cantidad en la unidad original seleccionada por el usuario
+                const item = data.inventario.find(i => i.id === ing.invId);
+                const cantidadMostrar = item ? convertirUnidades(ing.cantidad, item.unidad, ing.unidadOriginal) : ing.cantidadOriginal;
+                
+                return `<span class="ing-tag">${ing.nombre}: ${cantidadMostrar.toFixed(2)} ${ing.unidadOriginal} 
+                    <i class="fas fa-times text-danger ms-1" onclick="eliminarIngredienteTemp(${idx})"></i>
+                </span>`;
+            }).join('');
+        }
+
+        function eliminarIngredienteTemp(index) {
+            recetaTemp.splice(index, 1);
+            actualizarVistaTemp();
+        }
+
+        function guardarPlatoCompleto() {
+            const nombre = document.getElementById('platoNombre').value.trim();
+            const precio = parseFloat(document.getElementById('platoPrecio').value);
+            const moneda = document.getElementById('platoMoneda').value;
+
+            if(!nombre || !precio || recetaTemp.length === 0) {
+                Swal.fire('Error', 'Complete todos los datos del plato y agregue ingredientes', 'warning');
+                return;
+            }
+
+            if (precio <= 0) {
+                Swal.fire('Error', 'El precio debe ser mayor a 0', 'error');
+                return;
+            }
+
+            const precioUSD = moneda === 'COP' ? precio / data.tasa : precio;
+            
+            data.menu.push({
+                id: Date.now(),
+                nombre,
+                precioUSD,
+                ingredientes: [...recetaTemp]
+            });
+
+            recetaTemp = [];
+            actualizarVistaTemp();
+            limpiar(['platoNombre', 'platoPrecio']);
+            guardar();
+            
+            Swal.fire('¡Éxito!', 'Plato guardado en el menú', 'success');
+        }
+
+        // --- VENTAS ---
+        function modificarCant(valor) {
+            const input = document.getElementById('cantVenta');
+            let nuevaCantidad = parseInt(input.value) + valor;
+            if(nuevaCantidad < 1) nuevaCantidad = 1;
+            input.value = nuevaCantidad;
+        }
+
+        function procesarVenta() {
+            const indice = document.getElementById('selVenta').value;
+            const cantidad = parseInt(document.getElementById('cantVenta').value);
+            
+            if(indice === "" || indice === null) {
+                Swal.fire('Error', 'Seleccione un producto del menú', 'warning');
+                return;
+            }
+            
+            const plato = data.menu[indice];
+            let hayStock = true;
+            let ingredientesFaltantes = [];
+
+            // Verificar stock
+            plato.ingredientes.forEach(ing => {
+                const itemInventario = data.inventario.find(i => i.id == ing.invId);
+                
+                if(!itemInventario) {
+                    hayStock = false;
+                    ingredientesFaltantes.push(`${ing.nombre} (no existe en inventario)`);
+                } else {
+                    const cantidadNecesaria = ing.cantidad * cantidad;
+                    if(itemInventario.cantidad < cantidadNecesaria) {
+                        hayStock = false;
+                        const cantidadMostrar = convertirUnidades(cantidadNecesaria, itemInventario.unidad, ing.unidadOriginal || 'g');
+                        const stockMostrar = convertirUnidades(itemInventario.cantidad, itemInventario.unidad, ing.unidadOriginal || 'g');
+                        ingredientesFaltantes.push(`${ing.nombre} (necesita: ${cantidadMostrar.toFixed(2)} ${ing.unidadOriginal || 'g'}, tiene: ${stockMostrar.toFixed(2)} ${ing.unidadOriginal || 'g'})`);
+                    }
+                }
+            });
+
+            if(!hayStock) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Stock insuficiente',
+                    html: `Faltan:<br><small>${ingredientesFaltantes.join('<br>')}</small>`
+                });
+                return;
+            }
+
+            // Calcular costo y descontar inventario
+            let costoTotal = 0;
+            plato.ingredientes.forEach(ing => {
+                const itemInventario = data.inventario.find(i => i.id == ing.invId);
+                const cantidadNecesaria = ing.cantidad * cantidad;
+                itemInventario.cantidad -= cantidadNecesaria;
+                costoTotal += (itemInventario.costoUnitarioUSD * cantidadNecesaria);
+                
+                // Si la cantidad llega a 0, eliminar el item
+                if (itemInventario.cantidad <= 0) {
+                    data.inventario = data.inventario.filter(i => i.id != ing.invId);
+                }
+            });
+
+            const ventaTotal = plato.precioUSD * cantidad;
+            const ganancia = ventaTotal - costoTotal;
+
+            data.movimientos.push({
+                tipo: 'venta',
+                detalle: `${plato.nombre} x${cantidad}`,
+                monto: ventaTotal,
+                costo: costoTotal,
+                ganancia: ganancia,
+                fecha: new Date().toISOString()
+            });
+
+            document.getElementById('cantVenta').value = 1;
+            guardar();
+            
+            Swal.fire({
+                title: '¡Venta Exitosa!',
+                html: `Total: $${ventaTotal.toFixed(2)} USD<br>Ganancia: $${ganancia.toFixed(2)} USD`,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // --- RENDERIZADO ---
+        function renderizarInterfaz() {
+            const tasa = data.tasa;
+            
+            // Renderizar inventario
+            const listaInventario = document.getElementById('listaInventario');
+            const selectIngredientes = document.getElementById('selIngrediente');
+            
+            listaInventario.innerHTML = '';
+            selectIngredientes.innerHTML = '<option value="">Seleccionar...</option>';
+            
+            let valorTotalInventario = 0;
+
+            data.inventario.forEach(item => {
+                valorTotalInventario += (item.costoUnitarioUSD * item.cantidad);
+                
+                // Convertir a gramos para mostrar
+                const cantidadEnGramos = convertirUnidades(item.cantidad, item.unidad, 'g');
+                
+                listaInventario.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${item.nombre}</strong>
+                            <small class="text-muted">(${item.cantidad.toFixed(2)} ${item.unidad} ≈ ${cantidadEnGramos.toFixed(0)}g)</small>
+                        </div>
+                        <span class="badge bg-secondary">$${(item.costoUnitarioUSD * item.cantidad).toFixed(2)} USD</span>
+                    </li>
+                `;
+                
+                selectIngredientes.innerHTML += `
+                    <option value="${item.id}">${item.nombre} (${item.cantidad.toFixed(2)} ${item.unidad})</option>
+                `;
+            });
+
+            document.getElementById('finInversion').innerText = `$${valorTotalInventario.toFixed(2)} USD`;
+
+            // Renderizar menú
+            const listaMenu = document.getElementById('listaMenu');
+            const selectVentas = document.getElementById('selVenta');
+            
+            listaMenu.innerHTML = '';
+            selectVentas.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+            data.menu.forEach((plato, indice) => {
+                let costoPlato = 0;
+                
+                plato.ingredientes.forEach(ing => {
+                    const ingrediente = data.inventario.find(x => x.id == ing.invId);
+                    if(ingrediente) {
+                        costoPlato += (ingrediente.costoUnitarioUSD * ing.cantidad);
+                    }
+                });
+
+                const precioCOP = plato.precioUSD * tasa;
+                const margen = costoPlato > 0 ? ((plato.precioUSD - costoPlato) / costoPlato * 100).toFixed(1) : '0';
+                const colorMargen = margen >= 50 ? 'text-success' : (margen >= 30 ? 'text-warning' : 'text-danger');
+
+                listaMenu.innerHTML += `
+                    <div class="col-6">
+                        <div class="card card-custom p-3 border-start border-4 border-warning h-100">
+                            <h6 class="fw-bold mb-1">${plato.nombre}</h6>
+                            <div class="text-success fw-bold">${formatearMoneda(precioCOP)} COP</div>
+                            <small class="text-muted">Costo: $${costoPlato.toFixed(2)} USD</small><br>
+                            <small class="${colorMargen}">Margen: ${margen}%</small>
+                        </div>
+                    </div>
+                `;
+
+                selectVentas.innerHTML += `
+                    <option value="${indice}">${plato.nombre} - ${formatearMoneda(precioCOP)} COP</option>
+                `;
+            });
+
+            // Renderizar historial de ventas
+            const historialVentas = document.getElementById('historialVentas');
+            historialVentas.innerHTML = '';
+            
+            const hoy = new Date().toLocaleDateString();
+            let ventasHoy = 0;
+            let gananciaHoy = 0;
+
+            // Calcular ventas y ganancias del día
+            data.movimientos.forEach(movimiento => {
+                const fechaMovimiento = new Date(movimiento.fecha).toLocaleDateString();
+                if(fechaMovimiento === hoy) {
+                    if(movimiento.tipo === 'venta') {
+                        ventasHoy += movimiento.monto;
+                        gananciaHoy += movimiento.ganancia;
+                    }
+                    if(movimiento.tipo === 'baja') {
+                        gananciaHoy -= movimiento.monto;
+                    }
+                }
+            });
+
+            // Mostrar últimos 10 movimientos
+            const movimientosRecientes = data.movimientos.slice().reverse().slice(0, 10);
+            
+            movimientosRecientes.forEach(movimiento => {
+                let claseColor = '';
+                let icono = '';
+                
+                switch(movimiento.tipo) {
+                    case 'venta':
+                        claseColor = 'text-success';
+                        icono = '<i class="fas fa-cash-register me-2"></i>';
+                        break;
+                    case 'compra':
+                        claseColor = 'text-primary';
+                        icono = '<i class="fas fa-shopping-cart me-2"></i>';
+                        break;
+                    case 'baja':
+                        claseColor = 'text-danger';
+                        icono = '<i class="fas fa-trash me-2"></i>';
+                        break;
+                }
+
+                const fecha = new Date(movimiento.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                historialVentas.innerHTML += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            ${icono}
+                            <div>
+                                <small class="d-block">${movimiento.detalle}</small>
+                                <small class="text-muted">${fecha}</small>
+                            </div>
+                        </div>
+                        <span class="${claseColor} fw-bold">$${movimiento.monto.toFixed(2)} USD</span>
+                    </div>
+                `;
+            });
+
+            // Actualizar finanzas
+            document.getElementById('finGanancia').innerText = `$${gananciaHoy.toFixed(2)} USD`;
+            document.getElementById('finGananciaCop').innerText = formatearMoneda(gananciaHoy * tasa);
+            document.getElementById('finVentas').innerText = `$${ventasHoy.toFixed(2)} USD`;
+        }
+
+        // --- REPORTES PDF ---
+        function generarReportePDF() {
+            const tasa = data.tasa;
+            const hoy = new Date();
+            const hoyStr = hoy.toDateString();
+            
+            const movimientosHoy = data.movimientos.filter(m => 
+                new Date(m.fecha).toDateString() === hoyStr
+            );
+
+            let totalVentas = 0;
+            let totalBajas = 0;
+            let totalCompras = 0;
+            let gananciaNeta = 0;
+
+            movimientosHoy.forEach(m => {
+                if(m.tipo === 'venta') {
+                    totalVentas += m.monto;
+                    gananciaNeta += m.ganancia;
+                } else if(m.tipo === 'baja') {
+                    totalBajas += m.monto;
+                    gananciaNeta -= m.monto;
+                } else if(m.tipo === 'compra') {
+                    totalCompras += m.monto;
+                }
+            });
+            const ventana = window.open('', '_blank');
+            ventana.document.write(html);
+            ventana.document.close();
+        }
+
+        // --- BACKUP Y RESTAURACIÓN ---
+        function descargarBackup() {
+            const fecha = new Date().toISOString().split('T')[0];
+            const hora = new Date().toLocaleTimeString().replace(/:/g, '-');
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `effata_backup_${fecha}_${hora}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            Swal.fire('Backup', 'Archivo de respaldo descargado', 'success');
+        }
+
+        function restaurarBackup(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            Swal.fire({
+                title: '¿Restaurar backup?',
+                text: 'Esto sobrescribirá todos los datos actuales',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, restaurar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const datos = JSON.parse(e.target.result);
+                            // Validar estructura básica
+                            if(datos.inventario && datos.menu && datos.movimientos) {
+                                data = datos;
+                                guardar();
+                                Swal.fire('¡Restaurado!', 'Datos recuperados correctamente', 'success');
+                            } else {
+                                Swal.fire('Error', 'El archivo no tiene el formato correcto', 'error');
+                            }
+                        } catch(err) {
+                            Swal.fire('Error', 'No se pudo leer el archivo', 'error');
+                        }
+                        // Limpiar input
+                        input.value = '';
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        }
+
+        // --- UTILIDADES ---
+        function limpiar(ids) {
+            ids.forEach(id => {
+                const elemento = document.getElementById(id);
+                if(elemento) elemento.value = '';
+            });
+        }
+
+        function formatearMoneda(valor) {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(valor);
+        }
+
+        function borrarTodo() {
+            Swal.fire({
+                title: '¿Resetear todo?',
+                text: 'Esta acción eliminará TODOS los datos y no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, borrar todo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('effata_system_db');
+                    location.reload();
+                }
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('tasaCambio').addEventListener('change', guardar);
+        document.getElementById('tasaCambio').addEventListener('input', function() {
+            if(this.value < 1) this.value = 1;
+        });
+
+        // Animar elementos al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.querySelector('.app-header').classList.add('animate__animated', 'animate__fadeInDown');
+            }, 100);
+        });
+    </script>
+</body>
+</html>
